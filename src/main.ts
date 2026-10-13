@@ -15,6 +15,7 @@ import {
   tryMove,
 } from "./core";
 import { LEVELS, buildLevel, parsePicture } from "./levels";
+import { audio } from "./audio";
 import { BoardView, drawPicture } from "./render";
 import { loadSave, writeSave } from "./storage";
 
@@ -22,6 +23,34 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 
 const save = loadSave();
 const view = new BoardView($<HTMLCanvasElement>("game"));
+
+// ---------- audio ----------
+
+// Browsers only allow sound after a user gesture; unlock on the first one (capture
+// phase, so it runs before any tap handler that wants to play a sound).
+for (const evt of ["pointerdown", "keydown", "touchend"]) {
+  window.addEventListener(evt, () => audio.unlock(), { capture: true, passive: true });
+}
+
+view.onLand = (kind) => (kind === "cell" ? audio.playLock() : audio.playTray());
+
+function syncAudioButtons(): void {
+  for (const btn of document.querySelectorAll<HTMLButtonElement>("[data-audio]")) {
+    const on = btn.dataset.audio === "sfx" ? audio.sfx : audio.music;
+    btn.classList.toggle("off", !on);
+    btn.setAttribute("aria-pressed", String(on));
+    if (btn.dataset.audio === "sfx") btn.textContent = on ? "🔊" : "🔇";
+  }
+}
+
+for (const btn of document.querySelectorAll<HTMLButtonElement>("[data-audio]")) {
+  btn.addEventListener("click", () => {
+    if (btn.dataset.audio === "sfx") audio.setSfx(!audio.sfx);
+    else audio.setMusic(!audio.music);
+    syncAudioButtons();
+  });
+}
+syncAudioButtons();
 
 interface Session {
   idx: number;
@@ -150,9 +179,11 @@ function tap(i: number): void {
   const r = tryMove(state, i);
   if (!r) {
     view.shake(clusterAt(state, i));
+    audio.playInvalid();
     toast("The tray is full. Undo or add tray space.");
     return;
   }
+  audio.playPick();
   session.history.push(state);
   session.state = r.state;
   view.animate(r.state, r.flights);
@@ -176,6 +207,7 @@ function complete(): void {
       drawPicture($<HTMLCanvasElement>("win-pic"), parsePicture(LEVELS[idx]), 200);
       $<HTMLButtonElement>("btn-next").textContent = idx + 1 < LEVELS.length ? "Next" : "Levels";
       $("win").classList.remove("hidden");
+      audio.playWin();
     }, 350);
   });
 }
@@ -197,6 +229,7 @@ $("btn-undo").addEventListener("click", () => {
   while (prev.tray.length < session.state.tray.length) prev.tray.push(EMPTY);
   session.state = prev;
   view.replaceState(prev);
+  audio.playUndo();
   persist();
   updateButtons();
 });
@@ -221,6 +254,7 @@ $("btn-hint").addEventListener("click", () => {
     return;
   }
   view.pulse(clusterAt(session.state, move));
+  audio.playHint();
 });
 
 $("btn-smart").addEventListener("click", () => {
@@ -237,6 +271,7 @@ $("btn-tray").addEventListener("click", () => {
   if (!session || session.state.tray.length >= MAX_TRAY) return;
   for (let k = 0; k < 4; k++) session.state.tray.push(EMPTY);
   view.addTraySlots(session.state);
+  audio.playTrayAdd();
   persist();
   updateButtons();
 });

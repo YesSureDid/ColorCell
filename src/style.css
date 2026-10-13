@@ -119,6 +119,23 @@ button {
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
 }
 
+.icon.small {
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
+}
+
+.icon.off {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+.audio-row {
+  display: flex;
+  gap: 14px;
+  margin-top: 14px;
+}
+
 .preview {
   width: 44px;
   height: 44px;
