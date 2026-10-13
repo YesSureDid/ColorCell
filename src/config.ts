@@ -4,4 +4,4 @@
 // 123456789-abc.apps.googleusercontent.com). Client IDs are public, so committing
 // it is fine. While this is empty the sync button stays hidden and the game works
 // exactly as before.
-export const GOOGLE_CLIENT_ID = "";
+export const GOOGLE_CLIENT_ID: string = "637464867674-bcu49bbvkhg6vac8aagj9dbtqipm2fuq.apps.googleusercontent.com";
