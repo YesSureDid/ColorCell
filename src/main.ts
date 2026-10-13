@@ -259,6 +259,15 @@ $("btn-gallery").addEventListener("click", () => show("gallery"));
 
 new ResizeObserver(() => view.resize()).observe($("game"));
 
+// Offline play: the service worker is generated at build time (see vite.config.ts).
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {
+      // offline support is a bonus; the game works without it
+    });
+  });
+}
+
 // Dev-only test hook (removed from production builds): play the solver's next move.
 if (import.meta.env.DEV) {
   (window as unknown as Record<string, unknown>).__cc = {
