@@ -16,6 +16,8 @@ import {
 } from "./core";
 import { LEVELS, buildLevel, parsePicture } from "./levels";
 import { audio } from "./audio";
+import { driveSync } from "./drive";
+import { mergeSaves } from "./merge";
 import { BoardView, drawPicture } from "./render";
 import { loadSave, writeSave } from "./storage";
 
@@ -66,7 +68,10 @@ const MAX_TRAY = 36;
 
 type ScreenName = "menu" | "levels" | "gallery" | "play";
 
+let currentScreen: ScreenName = "menu";
+
 function show(name: ScreenName): void {
+  currentScreen = name;
   for (const el of document.querySelectorAll<HTMLElement>(".screen")) {
     el.classList.toggle("active", el.id === name);
   }
@@ -148,7 +153,9 @@ function persist(): void {
     cells: session.state.cells.slice(),
     tray: session.state.tray.slice(),
   };
+  (save.progressAt ??= {})[session.level.id] = Date.now();
   writeSave(save);
+  driveSync.schedule();
 }
 
 let toastTimer = 0;
@@ -201,7 +208,9 @@ function complete(): void {
   const { level, idx } = session;
   save.completed[level.id] = Date.now();
   delete save.progress[level.id];
+  if (save.progressAt) delete save.progressAt[level.id];
   writeSave(save);
+  driveSync.schedule();
   view.whenIdle(() => {
     window.setTimeout(() => {
       drawPicture($<HTMLCanvasElement>("win-pic"), parsePicture(LEVELS[idx]), 200);
@@ -293,6 +302,49 @@ $("btn-levels").addEventListener("click", () => show("levels"));
 $("btn-gallery").addEventListener("click", () => show("gallery"));
 
 new ResizeObserver(() => view.resize()).observe($("game"));
+
+// ---------- Google Drive sync ----------
+
+function renderSync(): void {
+  $("sync-box").style.display = driveSync.configured ? "" : "none";
+  const { status } = driveSync;
+  const btn = $<HTMLButtonElement>("btn-sync");
+  btn.disabled = status === "syncing";
+  btn.textContent = status === "unlinked" ? "☁ Sync with Google" : status === "syncing" ? "Syncing…" : "☁ Sync now";
+  const when = driveSync.lastSynced
+    ? new Date(driveSync.lastSynced).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+    : "";
+  $("sync-status").textContent = {
+    unlinked: "Save your progress across devices",
+    "needs-auth": "Tap to sync this device",
+    syncing: "Syncing…",
+    synced: `Synced at ${when}`,
+    offline: "Offline: will sync when you're back online",
+    error: "Sync failed. Tap to retry.",
+  }[status];
+  $("btn-unlink").style.display = driveSync.linked ? "" : "none";
+}
+
+driveSync.init(
+  () => save,
+  (remote) => {
+    // merge with the live save again: moves made while the sync was running must not be lost
+    const m = mergeSaves(save, remote);
+    save.completed = m.completed;
+    save.progress = m.progress;
+    save.progressAt = m.progressAt;
+    writeSave(save);
+    if (currentScreen === "levels") renderLevels();
+    if (currentScreen === "gallery") renderGallery();
+  },
+);
+driveSync.onChange(renderSync);
+renderSync();
+
+$("btn-sync").addEventListener("click", () => void driveSync.sync(true));
+$("btn-unlink").addEventListener("click", () => {
+  if (confirm("Stop syncing on this device? Your progress stays here and in your Google Drive.")) driveSync.unlink();
+});
 
 // Offline play: the service worker is generated at build time (see vite.config.ts).
 if ("serviceWorker" in navigator && import.meta.env.PROD) {

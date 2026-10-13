@@ -9,6 +9,8 @@ export interface SaveData {
   v: 1;
   completed: Record<string, number>; // level id -> completion time
   progress: Record<string, Progress>; // in-progress boards, so you can resume
+  /** level id -> when that board was last played. Lets two devices agree which copy is newer. */
+  progressAt?: Record<string, number>;
 }
 
 function empty(): SaveData {

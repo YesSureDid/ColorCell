@@ -130,6 +130,42 @@ button {
   filter: grayscale(1);
 }
 
+.sync-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 22px;
+}
+
+.sync-btn {
+  padding: 9px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #3b8fd0;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.sync-btn:disabled {
+  opacity: 0.6;
+}
+
+.sync-status {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.link {
+  border: 0;
+  background: none;
+  color: #3b8fd0;
+  font-size: 12px;
+  text-decoration: underline;
+}
+
 .audio-row {
   display: flex;
   gap: 14px;
