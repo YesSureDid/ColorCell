@@ -8,7 +8,7 @@ import { SUBJECTS, renderSubject } from "./art/subjects";
 
 /** Play order. Difficulty (how scrambled, how much spare tray) ramps up across the list. */
 const ORDER = [
-  "dog", "cat", "sunflower", "icecream", "fox", "rainbow", "panda", "cupcake", "butterfly", "goldfish",
+  "heart", "dog", "cat", "sunflower", "icecream", "fox", "rainbow", "panda", "cupcake", "butterfly", "goldfish",
   "owl", "penguin", "sailboat", "toadstool", "rocket", "macaw", "whale", "pumpkin", "balloon", "snowman",
   "lighthouse", "beach", "unicorn", "peacock", "mandala",
 ];
@@ -45,10 +45,10 @@ ORDER.forEach((key, i) => {
   const gemsTotal = target.filter((c) => c !== NONE).length;
 
   // difficulty ramp: 20% scrambled on level 1 up to 62% on level 25
-  const t = i / (N - 1);
-  const loose = Math.round((0.2 + 0.42 * t) * 100) / 100;
+  const t = Math.max(0, i - 1) / (N - 2); // level 1 is the tutorial heart; the ramp starts at level 2
+  const loose = key === "heart" ? 0.15 : Math.round((0.2 + 0.42 * t) * 100) / 100;
   // spare tray above what the solver needs: generous early, still fair late
-  const slack = i < 5 ? 6 : i < 12 ? 5 : 4;
+  const slack = i < 6 ? 6 : i < 12 ? 5 : 4;
 
   // Try many scrambles and keep the one that needs the least tray space, so
   // difficulty follows the ramp instead of jumping around with the random seed.

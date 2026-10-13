@@ -1,4 +1,5 @@
 import { Art } from "../raster";
+import { heart } from "./heart";
 import { dog } from "./dog";
 import { cat } from "./cat";
 import { sunflower, fox, icecream, rainbow } from "./batch1";
@@ -15,7 +16,7 @@ export interface Subject {
 }
 
 /** Level order. Index 0 is level 1. */
-export const SUBJECTS: Subject[] = [dog, cat, sunflower, fox, icecream, rainbow, panda, cupcake, owl, butterfly, sailboat, goldfish,
+export const SUBJECTS: Subject[] = [heart, dog, cat, sunflower, fox, icecream, rainbow, panda, cupcake, owl, butterfly, sailboat, goldfish,
   macaw, toadstool, rocket, penguin, balloon, lighthouse, whale, unicorn, pumpkin, snowman, beach, peacock, mandala,
 ];
 

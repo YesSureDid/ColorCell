@@ -4,10 +4,11 @@ import { LEVELS, buildLevel, parsePicture } from "./levels";
 import { countLoose, mulberry32, scrambleTo } from "./scramble";
 
 describe("level set", () => {
-  it("has 25 levels, the Black Lab first and the Brown Tabby second", () => {
-    expect(LEVELS).toHaveLength(25);
-    expect(LEVELS[0].name).toBe("Black Lab");
-    expect(LEVELS[1].name).toBe("Brown Tabby");
+  it("has 26 levels: a Heart to teach the game, then the Black Lab and Brown Tabby", () => {
+    expect(LEVELS).toHaveLength(26);
+    expect(LEVELS[0].name).toBe("Heart");
+    expect(LEVELS[1].name).toBe("Black Lab");
+    expect(LEVELS[2].name).toBe("Brown Tabby");
   });
 
   it("has unique ids and names", () => {
@@ -21,20 +22,20 @@ describe("level set", () => {
       const gems = pic.target.filter((c) => c !== NONE).length;
       expect(pic.w, def.id).toBeLessThanOrEqual(24);
       expect(pic.h, def.id).toBeLessThanOrEqual(28);
-      expect(gems, def.id).toBeGreaterThan(200);
+      expect(gems, def.id).toBeGreaterThan(150);
       expect(pic.palette.length, def.id).toBeLessThanOrEqual(26);
     }
   });
 
   it("gets harder: later levels are more scrambled than early ones", () => {
-    const early = LEVELS.slice(0, 5).map((d) => d.loose);
+    const early = LEVELS.slice(0, 6).map((d) => d.loose);
     const late = LEVELS.slice(-5).map((d) => d.loose);
     expect(Math.min(...late)).toBeGreaterThan(Math.max(...early));
   });
 });
 
 describe("scramble", () => {
-  const pic = parsePicture(LEVELS[0]);
+  const pic = parsePicture(LEVELS[1]);
 
   it("is deterministic for a seed", () => {
     expect(scrambleTo(pic, 0.3, mulberry32(5))).toEqual(scrambleTo(pic, 0.3, mulberry32(5)));
