@@ -245,7 +245,7 @@ $("btn-undo").addEventListener("click", () => {
 
 $("btn-hint").addEventListener("click", () => {
   if (!session) return;
-  const path = solve(session.state, 40000);
+  const path = solve(session.state, 40000, 300);
   let move = path && path.length > 0 ? path[0] : -1;
   if (move < 0) {
     // fall back to any legal move that parks the fewest gems
@@ -360,7 +360,7 @@ if (import.meta.env.DEV) {
   (window as unknown as Record<string, unknown>).__cc = {
     step(): boolean {
       if (!session) return false;
-      const path = solve(session.state, 40000);
+      const path = solve(session.state, 40000, 2000);
       if (!path || path.length === 0) return false;
       tap(path[0]);
       return true;

@@ -215,16 +215,22 @@ function stateKey(s: GameState): string {
 
 /**
  * Depth-first solver. Returns a list of cell indices to tap, in order, or null
- * if no solution was found within `maxNodes` states.
+ * if no solution was found within `maxNodes` states or `maxMs` milliseconds
+ * (big boards can have dead-end positions, and the UI must never freeze).
  */
-export function solve(start: GameState, maxNodes = 40000): number[] | null {
+export function solve(start: GameState, maxNodes = 40000, maxMs = Infinity): number[] | null {
   const seen = new Set<string>();
   const path: number[] = [];
+  const deadline = maxMs === Infinity ? Infinity : performance.now() + maxMs;
   let nodes = 0;
 
   const dfs = (s: GameState): boolean => {
     if (isWon(s)) return true;
     if (++nodes > maxNodes) return false;
+    if ((nodes & 31) === 0 && performance.now() > deadline) {
+      nodes = maxNodes + 1; // out of time: unwind everything
+      return false;
+    }
     const key = stateKey(s);
     if (seen.has(key)) return false;
     seen.add(key);
