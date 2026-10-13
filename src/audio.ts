@@ -65,6 +65,7 @@ class AudioEngine {
 
   private run = new RunCounter(TUNING.runGapMs);
   private limiter = new RateLimiter(10, 700);
+  private clinkLimiter = new RateLimiter(20, 500);
 
   private musicOn = false;
   private musicTimer = 0;
@@ -335,6 +336,103 @@ class AudioEngine {
     }
   }
 
+  // ---------- puzzle start / finish ----------
+
+  /** A short glassy "tink" (much shorter than the chime) for lots of small impacts. */
+  private tink(freq: number, vel: number, delay = 0): void {
+    const ctx = this.ctx!;
+    const t = ctx.currentTime + 0.005 + delay;
+    const out = ctx.createGain();
+    out.connect(this.sfxBus);
+    const send = ctx.createGain();
+    send.gain.value = 0.25;
+    out.connect(send).connect(this.reverbIn);
+    const partials = [
+      { ratio: 1, amp: 1, decay: 0.2 },
+      { ratio: 2.76, amp: 0.3, decay: 0.09 },
+    ];
+    for (const p of partials) {
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = freq * p.ratio;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(TUNING.chime * 0.8 * p.amp * vel, t + 0.002);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + p.decay);
+      osc.connect(g).connect(out);
+      osc.start(t);
+      osc.stop(t + p.decay + 0.03);
+    }
+    const click = ctx.createBufferSource();
+    click.buffer = this.noise;
+    const hp = ctx.createBiquadFilter();
+    hp.type = "bandpass";
+    hp.frequency.value = 2400;
+    const cg = ctx.createGain();
+    cg.gain.value = 0.04 * vel;
+    click.connect(hp).connect(cg).connect(this.sfxBus);
+    click.start(t);
+  }
+
+  /** Drop-in at the start of a puzzle: each row lands with a small tink, climbing as the picture builds. */
+  playIntroLand(rowFromBottom: number, rows: number): void {
+    if (!this.ready()) return;
+    if (rowFromBottom < 0) {
+      this.playTray();
+      return;
+    }
+    const step = Math.floor((rowFromBottom / Math.max(1, rows - 1)) * 9);
+    const detune = Math.pow(2, ((Math.random() - 0.5) * 20) / 1200);
+    this.tink(pentatonicFreq(step - 2) * detune, 0.5 + Math.random() * 0.2);
+  }
+
+  /** A finished colour: a bright rising run as the gems hop. */
+  playShine(): void {
+    if (!this.ready()) return;
+    [3, 5, 7, 8, 10, 12].forEach((s, i) => this.playChime(pentatonicFreq(s), 0.55 - i * 0.02, i * 0.07));
+    this.playChime(pentatonicFreq(14), 0.3, 0.5);
+  }
+
+  /** The hopping gems settle back: a soft low landing. */
+  playShineEnd(): void {
+    if (!this.ready()) return;
+    this.playChime(pentatonicFreq(0), 0.6);
+    this.playChime(pentatonicFreq(2), 0.5, 0.03);
+  }
+
+  /** The finished picture lets go: a falling whoosh. */
+  playCrumble(): void {
+    if (!this.ready()) return;
+    const ctx = this.ctx!;
+    const t = ctx.currentTime + 0.01;
+    const len = Math.floor(ctx.sampleRate * 1.8);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.Q.value = 0.8;
+    bp.frequency.setValueAtTime(2600, t);
+    bp.frequency.exponentialRampToValueAtTime(300, t + 1.5);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.11, t + 0.35);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.7);
+    src.connect(bp).connect(g).connect(this.sfxBus);
+    src.start(t);
+    src.stop(t + 1.8);
+  }
+
+  /** Gems clattering on the floor and each other. */
+  playClink(strength: number): void {
+    if (!this.ready()) return;
+    if (!this.clinkLimiter.allow(performance.now())) return;
+    const step = 1 + Math.floor(Math.random() * 9);
+    const detune = Math.pow(2, ((Math.random() - 0.5) * 40) / 1200);
+    this.tink(pentatonicFreq(step) * detune, 0.22 + 0.5 * strength);
+  }
   // ---------- ambient music ----------
 
   private startMusic(): void {

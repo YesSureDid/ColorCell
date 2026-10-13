@@ -3,6 +3,8 @@ const KEY = "colorcell.save.v1";
 export interface Progress {
   cells: number[];
   tray: number[];
+  /** Board generation revision the board was saved under (see BOARD_REV). */
+  rev?: number;
 }
 
 export interface SaveData {

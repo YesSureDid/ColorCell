@@ -52,6 +52,30 @@ body {
   text-shadow: 0 4px 0 #3b8fd0, 0 0 0 #3b8fd0, -2px 0 0 #3b8fd0, 2px 0 0 #3b8fd0, 0 -2px 0 #3b8fd0;
 }
 
+.logo-art {
+  display: block;
+  width: min(82vw, 340px);
+  height: auto;
+  filter: drop-shadow(0 6px 10px rgba(59, 143, 208, 0.25));
+  animation: logo-float 4s ease-in-out infinite;
+}
+
+@keyframes logo-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-art {
+    animation: none;
+  }
+}
+
 .tagline {
   margin: 0 0 18px;
   opacity: 0.8;

@@ -3,8 +3,9 @@ import { Art, inRoundRect, rgrad, sphere, vgrad, type Paint } from "./raster";
 import { tones } from "./color";
 
 /** Fills the whole canvas with a vertical gradient on a rounded card; returns the clip to apply at the end. */
-export function card(a: Art, ramp: string[], radius = 3): (x: number, y: number) => boolean {
-  const inside = inRoundRect(0, 0, a.w, a.h, radius);
+export function card(a: Art, ramp: string[], _radius = 0): (x: number, y: number) => boolean {
+  // Square corners: every picture is a complete rectangle with no empty cells.
+  const inside = inRoundRect(0, 0, a.w, a.h, 0);
   a.shape(inside, vgrad(0, a.h, ramp));
   return inside;
 }

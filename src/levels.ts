@@ -1,6 +1,6 @@
 import { Level, NONE } from "./core";
 import { LEVEL_DATA } from "./levelData";
-import { mulberry32, scrambleTo, type Picture } from "./scramble";
+import { makeBoard, mulberry32, type Picture } from "./scramble";
 
 export type { Picture } from "./scramble";
 
@@ -15,7 +15,7 @@ export interface LevelDef {
 }
 
 /**
- * The 25 levels, in play order. Pictures are drawn by `tools/art` and the
+ * The levels, in play order. Pictures are drawn by `tools/art` and the
  * difficulty numbers (tray size, seed) are tuned and solver-verified by
  * `tools/build-levels.ts`, which writes `levelData.ts`. Don't edit that by hand.
  */
@@ -46,6 +46,9 @@ export function parsePicture(def: LevelDef): Picture {
   return { w, h, palette, target };
 }
 
+/** Bump when the way boards are generated changes, so old half-played saves are not loaded onto new boards. */
+export const BOARD_REV = 2;
+
 const cache = new Map<string, Level>();
 
 /**
@@ -57,8 +60,8 @@ export function buildLevel(def: LevelDef): Level {
   const hit = cache.get(def.id);
   if (hit) return hit;
   const pic = parsePicture(def);
-  const cells = scrambleTo(pic, def.loose, mulberry32(def.seed));
-  const level: Level = { id: def.id, name: def.name, w: pic.w, h: pic.h, palette: pic.palette, target: pic.target, cells, tray: def.tray };
+  const { cells, bank } = makeBoard(pic, def.loose, mulberry32(def.seed));
+  const level: Level = { id: def.id, name: def.name, w: pic.w, h: pic.h, palette: pic.palette, target: pic.target, cells, tray: def.tray, bank };
   cache.set(def.id, level);
   return level;
 }

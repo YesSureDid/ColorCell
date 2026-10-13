@@ -23,7 +23,7 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     const [src, at] = atA >= atB ? [a, atA] : [b, atB];
     if (id in completed && at < completed[id]) continue; // finished after this board was saved
     const p = src.progress[id];
-    progress[id] = { cells: p.cells.slice(), tray: p.tray.slice() };
+    progress[id] = { ...p, cells: p.cells.slice(), tray: p.tray.slice() };
     progressAt[id] = Math.max(at, 0);
   }
   return { v: 1, completed, progress, progressAt };

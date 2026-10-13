@@ -63,13 +63,13 @@ describe("levels", () => {
       let s = stateFromLevel(level);
       expect(isWon(s)).toBe(false);
 
-      // Colour counts in the scramble must match the picture.
+      // Colour counts on the board plus the bank must match the picture.
       const count = (arr: readonly number[]) => {
         const m = new Map<number, number>();
         for (const c of arr) if (c >= 0) m.set(c, (m.get(c) ?? 0) + 1);
         return [...m.entries()].sort();
       };
-      expect(count(level.cells)).toEqual(count(level.target));
+      expect(count([...level.cells, ...(level.bank ?? [])])).toEqual(count(level.target));
 
       const path = solve(s, 50000);
       expect(path).not.toBeNull();

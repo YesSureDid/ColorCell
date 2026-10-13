@@ -20,6 +20,7 @@ export interface Level {
   target: number[]; // colour index per cell, or NONE
   cells: number[]; // starting gems (scrambled picture)
   tray: number; // starting tray capacity
+  bank?: number[]; // gems that start in the tray (taken out of a zone of the board)
 }
 
 export interface GameState {
@@ -49,13 +50,10 @@ export interface MoveResult {
 }
 
 export function stateFromLevel(level: Level): GameState {
-  return {
-    w: level.w,
-    h: level.h,
-    target: level.target,
-    cells: level.cells.slice(),
-    tray: new Array<number>(level.tray).fill(EMPTY),
-  };
+  const bank = level.bank ?? [];
+  const tray = new Array<number>(Math.max(level.tray, bank.length)).fill(EMPTY);
+  bank.forEach((g, i) => (tray[i] = g));
+  return { w: level.w, h: level.h, target: level.target, cells: level.cells.slice(), tray };
 }
 
 export function cloneState(s: GameState): GameState {
@@ -77,6 +75,21 @@ export function isWon(s: GameState): boolean {
     if (s.target[i] !== NONE && s.cells[i] !== s.target[i]) return false;
   }
   return trayCount(s) === 0;
+}
+
+/** Colours whose every picture cell already holds its own gem (all of that colour is done). */
+export function completedColors(s: GameState): Set<number> {
+  const total = new Map<number, number>();
+  const done = new Map<number, number>();
+  for (let i = 0; i < s.cells.length; i++) {
+    const t = s.target[i];
+    if (t === NONE) continue;
+    total.set(t, (total.get(t) ?? 0) + 1);
+    if (s.cells[i] === t) done.set(t, (done.get(t) ?? 0) + 1);
+  }
+  const out = new Set<number>();
+  for (const [c, n] of total) if (done.get(c) === n) out.add(c);
+  return out;
 }
 
 /** Connected (4-neighbour) loose gems of the same colour as cell `i`. */

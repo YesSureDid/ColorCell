@@ -5,6 +5,7 @@ import {
   Level,
   clusterAt,
   cloneState,
+  completedColors,
   findSmartTap,
   hasLegalMove,
   isLoose,
@@ -14,7 +15,7 @@ import {
   stateFromLevel,
   tryMove,
 } from "./core";
-import { LEVELS, buildLevel, parsePicture } from "./levels";
+import { BOARD_REV, LEVELS, buildLevel, parsePicture } from "./levels";
 import { audio } from "./audio";
 import { driveSync } from "./drive";
 import { mergeSaves } from "./merge";
@@ -35,6 +36,11 @@ for (const evt of ["pointerdown", "keydown", "touchend"]) {
 }
 
 view.onLand = (kind) => (kind === "cell" ? audio.playLock() : audio.playTray());
+view.onIntroLand = (row, rows) => audio.playIntroLand(row, rows);
+view.onShine = () => audio.playShine();
+view.onShineEnd = () => audio.playShineEnd();
+view.onCrumble = () => audio.playCrumble();
+view.onClink = (strength) => audio.playClink(strength);
 
 function syncAudioButtons(): void {
   for (const btn of document.querySelectorAll<HTMLButtonElement>("[data-audio]")) {
@@ -62,7 +68,7 @@ interface Session {
 }
 let session: Session | null = null;
 
-const MAX_TRAY = 36;
+const MAX_TRAY = 48;
 
 // ---------- screens ----------
 
@@ -133,7 +139,7 @@ function startLevel(idx: number): void {
   const level = buildLevel(LEVELS[idx]);
   const state = stateFromLevel(level);
   const p = save.progress[level.id];
-  if (p && p.cells.length === state.cells.length) {
+  if (p && p.rev === BOARD_REV && p.cells.length === state.cells.length) {
     state.cells = p.cells.slice();
     state.tray = p.tray.slice();
   }
@@ -143,8 +149,8 @@ function startLevel(idx: number): void {
   $("win").classList.add("hidden");
   show("play");
   view.setState(state, level.palette);
+  view.playIntro(checkStuck);
   updateButtons();
-  checkStuck();
 }
 
 function persist(): void {
@@ -152,6 +158,7 @@ function persist(): void {
   save.progress[session.level.id] = {
     cells: session.state.cells.slice(),
     tray: session.state.tray.slice(),
+    rev: BOARD_REV,
   };
   (save.progressAt ??= {})[session.level.id] = Date.now();
   writeSave(save);
@@ -180,7 +187,7 @@ function checkStuck(): void {
 }
 
 function tap(i: number): void {
-  if (!session) return;
+  if (!session || view.busy) return;
   const { state } = session;
   if (!isLoose(state, i)) return;
   const r = tryMove(state, i);
@@ -194,6 +201,14 @@ function tap(i: number): void {
   session.history.push(state);
   session.state = r.state;
   view.animate(r.state, r.flights);
+  // a colour that is now fully in place: its gems hop and shine once they have landed
+  const before = completedColors(state);
+  for (const c of completedColors(r.state)) {
+    if (before.has(c)) continue;
+    const cells: number[] = [];
+    r.state.target.forEach((t, k) => t === c && cells.push(k));
+    view.celebrate(cells);
+  }
   persist();
   updateButtons();
   if (isWon(r.state)) {
@@ -211,13 +226,16 @@ function complete(): void {
   if (save.progressAt) delete save.progressAt[level.id];
   writeSave(save);
   driveSync.schedule();
+  // let the last gems land and the last colour shine, then everything tumbles to the floor
   view.whenIdle(() => {
     window.setTimeout(() => {
-      drawPicture($<HTMLCanvasElement>("win-pic"), parsePicture(LEVELS[idx]), 200);
-      $<HTMLButtonElement>("btn-next").textContent = idx + 1 < LEVELS.length ? "Next" : "Levels";
-      $("win").classList.remove("hidden");
-      audio.playWin();
-    }, 350);
+      view.playOutro(() => {
+        drawPicture($<HTMLCanvasElement>("win-pic"), parsePicture(LEVELS[idx]), 200);
+        $<HTMLButtonElement>("btn-next").textContent = idx + 1 < LEVELS.length ? "Next" : "Levels";
+        $("win").classList.remove("hidden");
+        audio.playWin();
+      });
+    }, 250);
   });
 }
 
@@ -232,7 +250,7 @@ $("btn-back").addEventListener("click", () => {
 });
 
 $("btn-undo").addEventListener("click", () => {
-  if (!session || session.history.length === 0) return;
+  if (!session || view.busy || session.history.length === 0) return;
   const prev = cloneState(session.history.pop()!);
   // keep any tray space added since then
   while (prev.tray.length < session.state.tray.length) prev.tray.push(EMPTY);
@@ -244,7 +262,7 @@ $("btn-undo").addEventListener("click", () => {
 });
 
 $("btn-hint").addEventListener("click", () => {
-  if (!session) return;
+  if (!session || view.busy) return;
   const path = solve(session.state, 40000, 300);
   let move = path && path.length > 0 ? path[0] : -1;
   if (move < 0) {
@@ -267,7 +285,7 @@ $("btn-hint").addEventListener("click", () => {
 });
 
 $("btn-smart").addEventListener("click", () => {
-  if (!session) return;
+  if (!session || view.busy) return;
   const i = findSmartTap(session.state);
   if (i < 0) {
     toast("No easy gems right now.");

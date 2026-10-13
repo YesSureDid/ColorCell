@@ -157,6 +157,47 @@ export class Art {
     return out;
   }
 
+  /** Fills every empty pixel with `paint` (sampled at the pixel centre): a full-bleed background behind the subject. */
+  backdrop(paint: Paint): this {
+    const px = this.pixels().slice();
+    for (let j = 0; j < this.h; j++) {
+      for (let i = 0; i < this.w; i++) {
+        if (px[j * this.w + i] !== null) continue;
+        px[j * this.w + i] = typeof paint === "string" ? paint : paint(i + 0.5, j + 0.5);
+      }
+    }
+    this.grid = px;
+    return this;
+  }
+
+  /** Any pixel still empty takes the colour of its nearest filled neighbour (a safety net: no holes in a picture). */
+  fillHoles(): this {
+    const px = this.pixels().slice();
+    const { w, h } = this;
+    let frontier: number[] = [];
+    for (let i = 0; i < px.length; i++) if (px[i] !== null) frontier.push(i);
+    while (frontier.length > 0) {
+      const next: number[] = [];
+      for (const i of frontier) {
+        const x = i % w;
+        const y = (i - x) / w;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          const n = ny * w + nx;
+          if (px[n] === null) {
+            px[n] = px[i];
+            next.push(n);
+          }
+        }
+      }
+      frontier = next;
+    }
+    this.grid = px;
+    return this;
+  }
+
   /** Adds a one-pixel outline around the whole silhouette (transparent pixels touching art). */
   outline(color: string, diagonals = false): this {
     const px = this.pixels().slice();
