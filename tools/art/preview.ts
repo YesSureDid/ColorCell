@@ -1,5 +1,5 @@
 // Renders pictures to PNG so artwork can be reviewed by eye.
-//   npx tsx tools/art/preview.ts dog cat        -> tools/out/preview.png (side by side)
+//   npx tsx tools/art/preview.ts dog cat        -> tools/out/preview.png (side by side)`n//   npx tsx tools/art/preview.ts dog --out=tools/out/mine.png   -> custom output file
 //   npx tsx tools/art/preview.ts --all          -> every subject, one sheet per 6
 
 import { deflateSync, crc32 } from "node:zlib";
@@ -101,7 +101,9 @@ function sheet(subjects: Subject[], file: string): void {
   console.log("wrote", file, `${width}x${height}`);
 }
 
-const args = process.argv.slice(2);
+const outArg = process.argv.find((a) => a.startsWith("--out="));
+const OUT = outArg ? outArg.slice(6) : "tools/out/preview.png";
+const args = process.argv.slice(2).filter((a) => !a.startsWith("--out="));
 if (args[0] === "--all") {
   for (let i = 0; i < SUBJECTS.length; i += 6) {
     sheet(SUBJECTS.slice(i, i + 6), `tools/out/preview-${String(i / 6 + 1).padStart(2, "0")}.png`);
@@ -112,5 +114,6 @@ if (args[0] === "--all") {
     if (!s) throw new Error(`unknown subject ${id}`);
     return s;
   });
-  sheet(chosen, "tools/out/preview.png");
+  sheet(chosen, OUT);
 }
+

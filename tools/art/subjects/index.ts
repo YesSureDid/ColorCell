@@ -6,6 +6,11 @@ import { sunflower, fox, icecream, rainbow } from "./batch1";
 import { panda, cupcake, owl, butterfly, sailboat, goldfish } from "./batch2";
 import { macaw, toadstool, rocket, penguin, balloon, lighthouse, whale } from "./batch3";
 import { unicorn, pumpkin, snowman, beach, peacock, mandala } from "./batch4";
+import { turtle, frog, octopus, lion, bunny } from "./batch5";
+import { flamingo, koala, seahorse, hedgehog, dragon } from "./batch6";
+import { strawberry, donut, pizza, cactus, blossom } from "./batch7";
+import { sunrise, aurora, desert, island, autumn } from "./batch8";
+import { saturn, castle, windmill, lantern, teapot } from "./batch9";
 
 export interface Subject {
   id: string;
@@ -15,9 +20,12 @@ export interface Subject {
   draw: (a: Art) => void;
 }
 
-/** Level order. Index 0 is level 1. */
+/** Every picture. (Play order is set in tools/build-levels.ts.) */
 export const SUBJECTS: Subject[] = [heart, dog, cat, sunflower, fox, icecream, rainbow, panda, cupcake, owl, butterfly, sailboat, goldfish,
   macaw, toadstool, rocket, penguin, balloon, lighthouse, whale, unicorn, pumpkin, snowman, beach, peacock, mandala,
+  turtle, frog, octopus, lion, bunny, flamingo, koala, seahorse, hedgehog, dragon,
+  strawberry, donut, pizza, cactus, blossom, sunrise, aurora, desert, island, autumn,
+  saturn, castle, windmill, lantern, teapot,
 ];
 
 /**

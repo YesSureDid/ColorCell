@@ -47,7 +47,7 @@ export function parsePicture(def: LevelDef): Picture {
 }
 
 /** Bump when the way boards are generated changes, so old half-played saves are not loaded onto new boards. */
-export const BOARD_REV = 2;
+export const BOARD_REV = 3;
 
 const cache = new Map<string, Level>();
 

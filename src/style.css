@@ -149,6 +149,25 @@ button {
   font-size: 18px;
 }
 
+.pill {
+  align-self: center;
+  margin: 0 0 6px;
+  padding: 10px 26px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(#ffd45e, #f5a623);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4px 0 #c47f10;
+}
+
+.pill:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
 .icon.off {
   opacity: 0.45;
   filter: grayscale(1);

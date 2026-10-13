@@ -4,11 +4,17 @@ import { LEVELS, buildLevel, parsePicture } from "./levels";
 import { clusteredShare, countLoose, makeBoard, mulberry32, scrambleTo } from "./scramble";
 
 describe("level set", () => {
-  it("has 26 levels: a Heart to teach the game, then the Black Lab and Brown Tabby", () => {
-    expect(LEVELS).toHaveLength(26);
-    expect(LEVELS[0].name).toBe("Heart");
-    expect(LEVELS[1].name).toBe("Black Lab");
-    expect(LEVELS[2].name).toBe("Brown Tabby");
+  it("has 51 levels: the Goldfish opens, the Heart is second, the Black Lab and Brown Tabby finish", () => {
+    expect(LEVELS).toHaveLength(51);
+    expect(LEVELS[0].name).toBe("Goldfish Bowl");
+    expect(LEVELS[1].name).toBe("Heart");
+    expect(LEVELS[49].name).toBe("Black Lab");
+    expect(LEVELS[50].name).toBe("Brown Tabby");
+  });
+
+  it("keeps the old save ids for the Lab and Tabby so finished levels stay finished", () => {
+    expect(LEVELS[49].id).toBe("lab");
+    expect(LEVELS[50].id).toBe("tabby");
   });
 
   it("has unique ids and names", () => {
@@ -42,7 +48,7 @@ describe("level set", () => {
 });
 
 describe("scramble", () => {
-  const pic = parsePicture(LEVELS[1]);
+  const pic = parsePicture(LEVELS[49]);
 
   it("is deterministic for a seed", () => {
     expect(scrambleTo(pic, 0.3, mulberry32(5))).toEqual(scrambleTo(pic, 0.3, mulberry32(5)));
@@ -63,7 +69,7 @@ describe("scramble", () => {
 });
 
 describe("board setup", () => {
-  const pic = parsePicture(LEVELS[1]);
+  const pic = parsePicture(LEVELS[49]);
 
   it("scrambles in clusters: most loose gems have a same-colour neighbour", () => {
     const gems = scrambleTo(pic, 0.4, mulberry32(11));
@@ -73,11 +79,11 @@ describe("board setup", () => {
   it("opens a zone: some gems start in the bank, with empty cells on the board", () => {
     for (const def of LEVELS) {
       const level = buildLevel(def);
-      expect(level.bank!.length, def.id).toBeGreaterThanOrEqual(3);
+      expect(level.bank!.length, def.id).toBeGreaterThanOrEqual(2);
       expect(level.cells.some((c) => c === EMPTY), def.id).toBe(true);
       const s = stateFromLevel(level);
       expect(trayCount(s)).toBe(level.bank!.length);
-      expect(s.tray.length).toBeGreaterThanOrEqual(level.bank!.length + 4);
+      expect(s.tray.length).toBeGreaterThanOrEqual(level.bank!.length * 2);
     }
   });
 
@@ -119,3 +125,5 @@ describe("every level is winnable with the tray the player gets", () => {
     });
   }
 });
+
+

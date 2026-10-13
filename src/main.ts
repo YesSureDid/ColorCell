@@ -68,7 +68,7 @@ interface Session {
 }
 let session: Session | null = null;
 
-const MAX_TRAY = 48;
+const MAX_TRAY = 60;
 
 // ---------- screens ----------
 
@@ -315,6 +315,14 @@ $("btn-win-gallery").addEventListener("click", () => {
   show("gallery");
 });
 
+/** A surprise: a random level you haven't finished yet (any level once everything is done). */
+function randomLevel(): number {
+  const todo = LEVELS.flatMap((d, i) => (d.id in save.completed ? [] : [i]));
+  const pool = todo.length > 0 ? todo : LEVELS.map((_, i) => i);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+$("btn-random").addEventListener("click", () => startLevel(randomLevel()));
 $("btn-play").addEventListener("click", () => startLevel(firstUnfinished()));
 $("btn-levels").addEventListener("click", () => show("levels"));
 $("btn-gallery").addEventListener("click", () => show("gallery"));
