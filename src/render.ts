@@ -126,6 +126,9 @@ export class BoardView {
   private idleCallbacks: (() => void)[] = [];
   private raf = 0;
 
+  /** Called once for every gem that finishes flying (into its slot or the tray). */
+  onLand?: (kind: "cell" | "tray") => void;
+
   constructor(private canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext("2d")!;
   }
@@ -381,8 +384,10 @@ export class BoardView {
           const [x, y] = this.cellCenter(a.f.to.i);
           this.sparkle(x, y, now);
           navigator.vibrate?.(8);
+          this.onLand?.("cell");
         } else {
           this.pendingTray.delete(a.f.to.i);
+          this.onLand?.("tray");
         }
       }
       this.flights = this.flights.filter((f) => !finished.includes(f));
